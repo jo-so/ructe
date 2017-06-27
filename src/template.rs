@@ -1,5 +1,5 @@
+use engine;
 use expression::rust_name;
-use itertools::Itertools;
 use spacelike::spacelike;
 use std::io::{self, Write};
 use std::str::from_utf8;
@@ -7,49 +7,17 @@ use templateexpression::{template_expression, TemplateExpression};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Template {
-    preamble: Vec<String>,
-    args: Vec<String>,
-    body: Vec<TemplateExpression>,
+    pub preamble: Vec<String>,
+    pub args: Vec<String>,
+    pub body: Vec<TemplateExpression>,
 }
 
 impl Template {
+    #[deprecated(
+        note = "use instead: engine::write_rust(out, &self, name, \"templates\")"
+    )]
     pub fn write_rust(&self, out: &mut Write, name: &str) -> io::Result<()> {
-        out.write_all(
-            b"use std::io::{self, Write};\n\
-             #[cfg_attr(feature=\"cargo-clippy\", \
-             allow(useless_attribute))]\n\
-             #[allow(unused)]\n\
-             use ::templates::{Html,ToHtml};\n",
-        )?;
-        for l in &self.preamble {
-            writeln!(out, "{};", l)?;
-        }
-        let type_args = if self.args.contains(&"content: Content".to_owned())
-        {
-            (
-                "<Content>",
-                "\nwhere Content: FnOnce(&mut Write) -> io::Result<()>",
-            )
-        } else {
-            ("", "")
-        };
-        writeln!(
-            out,
-            "\n\
-             pub fn {name}{type_args}(out: &mut Write{args})\n\
-             -> io::Result<()> {type_spec}{{\n\
-             {body}\
-             Ok(())\n\
-             }}",
-            name = name,
-            type_args = type_args.0,
-            args = self
-                .args
-                .iter()
-                .format_with("", |arg, f| f(&format_args!(", {}", arg))),
-            type_spec = type_args.1,
-            body = self.body.iter().map(|b| b.code()).format(""),
-        )
+        engine::write_rust(out, &self, name, "templates")
     }
 }
 
