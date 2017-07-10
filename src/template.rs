@@ -26,13 +26,12 @@ named!(
     map!(
         tuple!(
             spacelike,
-            many0!(map!(
-                delimited!(
-                    tag!("@"),
-                    map_res!(is_not!(";()"), from_utf8),
-                    terminated!(tag!(";"), spacelike)
-                ),
-                String::from
+            many0!(do_parse!(
+                tag!("@") >> not!(char!('(')) >>
+                    code: is_not!(";") >>
+                    tag!(";") >>
+                    spacelike >>
+                    (from_utf8(code).unwrap().to_string())
             )),
             delimited!(
                 tag!("@("),
