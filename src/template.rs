@@ -1,5 +1,6 @@
 use engine;
 use expression::rust_name;
+use nom::eol;
 use spacelike::spacelike;
 use std::io::{self, Write};
 use std::str::from_utf8;
@@ -28,8 +29,7 @@ named!(
             spacelike,
             many0!(do_parse!(
                 tag!("@") >> not!(char!('(')) >>
-                    code: is_not!(";") >>
-                    tag!(";") >>
+                    code: is_not!(eol) >>
                     spacelike >>
                     (from_utf8(code).unwrap().to_string())
             )),
