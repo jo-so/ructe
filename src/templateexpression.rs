@@ -74,6 +74,9 @@ pub enum TemplateExpression {
     Text {
         text: String,
     },
+    Raw {
+        text: String,
+    },
     Expression {
         expr: String,
     },
@@ -127,6 +130,7 @@ impl TemplateExpression {
             TemplateExpression::Text { ref text } => {
                 format!("out.write_all({:?}.as_bytes())?;\n", text)
             }
+            TemplateExpression::Raw { ref text } => text.to_owned(),
             TemplateExpression::Expression { ref expr } => {
                 format!("{}.to_html(out)?;\n", expr)
             }
@@ -173,7 +177,7 @@ named!(
         err_str!("In expression starting here"),
         switch!(
             opt!(preceded!(tag!("@"),
-                           alt!(tag!(":") | tag!("{") | tag!("}") |
+                           alt!(tag!(":") | tag!("{") | tag!("}") | tag!("@") |
                                 terminated!(
                                     alt!(tag!("if") | tag!("for")),
                                     tag!(" ")) |
@@ -189,6 +193,10 @@ named!(
                 }) |
             Some(b"{") => value!(TemplateExpression::text("{{")) |
             Some(b"}") => value!(TemplateExpression::text("}}")) |
+            Some(b"@") => do_parse!(
+                text: take_until_and_consume!("\n") >>
+                (TemplateExpression::Raw { text: from_utf8(text).unwrap().to_string() + "\n" })
+            ) |
             Some(b"if") => return_error!(
                 err_str!("Error in conditional expression:"),
                 map!(
