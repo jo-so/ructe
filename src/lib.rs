@@ -515,6 +515,12 @@ pub fn parse_and_report_cargo(buf: &[u8], path: &Path) -> Option<Template> {
             println!("cargo:rerun-if-changed={}", path.display());
             Some(tpl)
         }
+
+        Incomplete(_size) => {
+            println!("cargo:warning=Premature end of file {:?}", path.display());
+            None
+        }
+
         result => {
             println!("cargo:warning=Template parse error in {:?}:", path);
             show_errors(&mut io::stdout(), &buf, result, "cargo:warning=");
@@ -668,11 +674,10 @@ fn show_errors<E>(
     result: nom::IResult<&[u8], E>,
     prefix: &str,
 ) {
-    if let Some(errors) = prepare_errors(buf, result) {
-        for &(ref kind, ref from, ref _to) in &errors {
-            show_error(out, buf, *from, &get_message(kind), prefix);
-        }
-    }
+    prepare_errors(buf, result).unwrap().iter()
+        .for_each(|(kind, from, _to)| {
+            show_error(out, &buf, *from, &get_message(kind), prefix);
+        });
 }
 
 fn get_message(err: &ErrorKind) -> String {
