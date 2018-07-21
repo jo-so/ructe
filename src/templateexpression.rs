@@ -178,9 +178,7 @@ named!(
         switch!(
             opt!(preceded!(tag!("@"),
                            alt!(tag!(":") | tag!("{") | tag!("}") | tag!("@") |
-                                terminated!(
-                                    alt!(tag!("if") | tag!("for")),
-                                    tag!(" "))))),
+                                tag!("if ") | tag!("for ")))),
             Some(b":") => map!(
                 pair!(rust_name,
                       delimited!(tag!("("),
@@ -196,7 +194,7 @@ named!(
                 text: take_until_and_consume!("\n") >>
                 (TemplateExpression::Raw { text: from_utf8(text).unwrap().to_string() + "\n" })
             ) |
-            Some(b"if") => return_error!(
+            Some(b"if ") => return_error!(
                 err_str!("Error in conditional expression:"),
                 map!(
                     tuple!(
@@ -212,7 +210,7 @@ named!(
                         body,
                         else_body,
                     })) |
-            Some(b"for") => map!(
+            Some(b"for ") => map!(
                 tuple!(
                     delimited!(
                         spacelike,
