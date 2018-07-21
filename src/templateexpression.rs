@@ -180,8 +180,7 @@ named!(
                            alt!(tag!(":") | tag!("{") | tag!("}") | tag!("@") |
                                 terminated!(
                                     alt!(tag!("if") | tag!("for")),
-                                    tag!(" ")) |
-                                value!(&b""[..])))),
+                                    tag!(" "))))),
             Some(b":") => map!(
                 pair!(rust_name,
                       delimited!(tag!("("),
@@ -250,16 +249,14 @@ named!(
                     expr: expr.to_string(),
                     body,
                 }) |
-            Some(b"") => map!(
-                expression,
-                |expr| TemplateExpression::Expression{ expr: expr.to_string() }
-            ) |
             None => alt!(
                 map!(comment, |()| TemplateExpression::Comment) |
                 map!(map_res!(is_not!("@{}"), from_utf8),
                      |text| TemplateExpression::Text {
                          text: text.to_string()
-                     })
+                     }) |
+                map!(preceded!(tag!("@"), expression),
+                     |expr| TemplateExpression::Expression{ expr: expr.to_string() })
             )
     ))
 );
